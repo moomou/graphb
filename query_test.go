@@ -64,3 +64,34 @@ func TestQuery_JSON(t *testing.T) {
 	})
 
 }
+
+func TestDgraphQuery(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Arguments can be nested structures", func(t *testing.T) {
+		t.Parallel()
+
+		q := NewQuery(TypeDgraphQuery).
+			SetName("").
+			SetFields(
+				NewFuncField("all").SetArguments(
+					ArgumentFuncType(
+						"anyofterms",
+						ArgumentString("name", "blob"),
+					),
+				).SetFields(
+					NewField("question"),
+				),
+			)
+
+		c := q.stringChan()
+
+		var strs []string
+		for str := range c {
+			strs = append(strs, str)
+		}
+
+		assert.Equal(t, `{all(func:anyofterms(name,"blob")){question}}`, strings.Join(strs, ""))
+	})
+
+}

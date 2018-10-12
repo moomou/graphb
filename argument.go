@@ -9,17 +9,30 @@ type argumentValue interface {
 }
 
 type Argument struct {
-	Name  string
-	Value argumentValue
+	Name   string
+	Value  argumentValue
+	IsFunc bool
 }
 
 func (a *Argument) stringChan() <-chan string {
 	tokenChan := make(chan string)
 	go func() {
 		tokenChan <- a.Name
-		tokenChan <- ":"
+		if a.IsFunc {
+			tokenChan <- tokenLP
+		} else {
+			tokenChan <- ":"
+		}
 		for str := range a.Value.stringChan() {
+			if a.IsFunc && (str == tokenLB || str == tokenRB) {
+				continue
+			} else if a.IsFunc && str == tokenColumn {
+				str = tokenComma
+			}
 			tokenChan <- str
+		}
+		if a.IsFunc {
+			tokenChan <- tokenRP
 		}
 		close(tokenChan)
 	}()
@@ -49,32 +62,36 @@ func ArgumentAny(name string, value interface{}) (Argument, error) {
 }
 
 func ArgumentBool(name string, value bool) Argument {
-	return Argument{name, argBool(value)}
+	return Argument{name, argBool(value), false}
 }
 
 func ArgumentInt(name string, value int) Argument {
-	return Argument{name, argInt(value)}
+	return Argument{name, argInt(value), false}
 }
 
 func ArgumentString(name string, value string) Argument {
-	return Argument{name, argString(value)}
+	return Argument{name, argString(value), false}
 }
 
 func ArgumentBoolSlice(name string, values ...bool) Argument {
-	return Argument{name, argBoolSlice(values)}
+	return Argument{name, argBoolSlice(values), false}
 }
 
 func ArgumentIntSlice(name string, values ...int) Argument {
-	return Argument{name, argIntSlice(values)}
+	return Argument{name, argIntSlice(values), false}
 }
 
 func ArgumentStringSlice(name string, values ...string) Argument {
-	return Argument{name, argStringSlice(values)}
+	return Argument{name, argStringSlice(values), false}
 }
 
 // ArgumentCustomType returns a custom GraphQL type's argument representation, which could be a recursive structure.
 func ArgumentCustomType(name string, values ...Argument) Argument {
-	return Argument{name, argumentSlice(values)}
+	return Argument{name, argumentSlice(values), false}
+}
+
+func ArgumentFuncType(name string, values ...Argument) Argument {
+	return Argument{name, argumentSlice(values), true}
 }
 
 /////////////////////////////
@@ -182,6 +199,7 @@ type argumentSlice []Argument
 
 func (s argumentSlice) stringChan() <-chan string {
 	tokenChan := make(chan string)
+
 	go func() {
 		tokenChan <- "{"
 		for i, v := range s {

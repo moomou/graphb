@@ -9,27 +9,27 @@ import (
 func TestArgumentAny(t *testing.T) {
 	arg, err := ArgumentAny("arg", 1)
 	assert.Nil(t, err)
-	assert.Equal(t, Argument{"arg", argInt(1)}, arg)
+	assert.Equal(t, Argument{Name: "arg", Value: argInt(1)}, arg)
 
 	arg, err = ArgumentAny("arg", true)
 	assert.Nil(t, err)
-	assert.Equal(t, Argument{"arg", argBool(true)}, arg)
+	assert.Equal(t, Argument{Name: "arg", Value: argBool(true)}, arg)
 
 	arg, err = ArgumentAny("arg", "str")
 	assert.Nil(t, err)
-	assert.Equal(t, Argument{"arg", argString("str")}, arg)
+	assert.Equal(t, Argument{Name: "arg", Value: argString("str")}, arg)
 
 	arg, err = ArgumentAny("arg", []string{"str", "slice"})
 	assert.Nil(t, err)
-	assert.Equal(t, Argument{"arg", argStringSlice([]string{"str", "slice"})}, arg)
+	assert.Equal(t, Argument{Name: "arg", Value: argStringSlice([]string{"str", "slice"})}, arg)
 
 	arg, err = ArgumentAny("arg", []bool{true, false})
 	assert.Nil(t, err)
-	assert.Equal(t, Argument{"arg", argBoolSlice([]bool{true, false})}, arg)
+	assert.Equal(t, Argument{Name: "arg", Value: argBoolSlice([]bool{true, false})}, arg)
 
 	arg, err = ArgumentAny("arg", []int{1, 2})
 	assert.Nil(t, err)
-	assert.Equal(t, Argument{"arg", argIntSlice([]int{1, 2})}, arg)
+	assert.Equal(t, Argument{Name: "arg", Value: argIntSlice([]int{1, 2})}, arg)
 
 	// Type Not Supported
 	arg, err = ArgumentAny("arg", 1.1)
@@ -40,30 +40,30 @@ func TestArgumentAny(t *testing.T) {
 
 func TestArgumentBool(t *testing.T) {
 	a := ArgumentBool("blocked", true)
-	assert.Equal(t, Argument{"blocked", argBool(true)}, a)
+	assert.Equal(t, Argument{Name: "blocked", Value: argBool(true)}, a)
 
 	a = ArgumentBool("blocked", false)
-	assert.Equal(t, Argument{"blocked", argBool(false)}, a)
+	assert.Equal(t, Argument{Name: "blocked", Value: argBool(false)}, a)
 }
 
 func TestArgumentInt(t *testing.T) {
 	a := ArgumentInt("blocked", 1)
-	assert.Equal(t, Argument{"blocked", argInt(1)}, a)
+	assert.Equal(t, Argument{Name: "blocked", Value: argInt(1)}, a)
 }
 
 func TestArgumentString(t *testing.T) {
 	a := ArgumentString("blocked", "a")
-	assert.Equal(t, Argument{"blocked", argString("a")}, a)
+	assert.Equal(t, Argument{Name: "blocked", Value: argString("a")}, a)
 	a = ArgumentString("blocked", "")
-	assert.Equal(t, Argument{"blocked", argString("")}, a)
+	assert.Equal(t, Argument{Name: "blocked", Value: argString("")}, a)
 }
 
 func TestArgumentStringSlice(t *testing.T) {
 	a := ArgumentStringSlice("blocked", "a", "b", "", " ", "d")
-	assert.Equal(t, Argument{"blocked", argStringSlice([]string{"a", "b", "", " ", "d"})}, a)
+	assert.Equal(t, Argument{Name: "blocked", Value: argStringSlice([]string{"a", "b", "", " ", "d"})}, a)
 
 	a = ArgumentStringSlice("blocked")
-	assert.Equal(t, Argument{"blocked", argStringSlice(nil)}, a)
+	assert.Equal(t, Argument{Name: "blocked", Value: argStringSlice(nil)}, a)
 }
 
 func Test_argBool(t *testing.T) {

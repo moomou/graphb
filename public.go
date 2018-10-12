@@ -22,6 +22,18 @@ func StringFromChan(c <-chan string) string {
 // Field Factory //
 ///////////////////
 
+func NewFuncField(alias string, options ...FieldOptionInterface) *Field {
+	f := &Field{Name: "func", IsFunc: true}
+	f.SetAlias(alias)
+	for _, op := range options {
+		if err := op.runFieldOption(f); err != nil {
+			f.E = errors.WithStack(err)
+			return f
+		}
+	}
+	return f
+}
+
 // NewField uses functional options to construct a new Field and returns the pointer to it.
 // On error, the pointer is nil.
 // To know more about this design pattern, see https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis

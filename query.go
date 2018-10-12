@@ -55,7 +55,9 @@ func (q *Query) StringChan() (<-chan string, error) {
 func (q *Query) stringChan() <-chan string {
 	tokenChan := make(chan string)
 	go func() {
-		tokenChan <- strings.ToLower(string(q.Type))
+		if q.Type != TypeDgraphQuery {
+			tokenChan <- strings.ToLower(string(q.Type))
+		}
 		// emit operation name
 		if q.Name != "" {
 			tokenChan <- tokenSpace

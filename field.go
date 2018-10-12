@@ -10,6 +10,7 @@ type Field struct {
 	Alias     string
 	Arguments []Argument
 	Fields    []*Field
+	IsFunc    bool
 	E         error
 }
 
@@ -44,15 +45,27 @@ func (f *Field) stringChan() <-chan string {
 
 	go func() {
 		// emit alias and names
-		if f.Alias != "" {
-			tokenChan <- f.Alias
+
+		if f.IsFunc {
+			if f.Alias != "" {
+				tokenChan <- f.Alias
+				tokenChan <- tokenLP
+			}
+			tokenChan <- f.Name
 			tokenChan <- tokenColumn
+		} else {
+			if f.Alias != "" {
+				tokenChan <- f.Alias
+				tokenChan <- tokenColumn
+			}
+			tokenChan <- f.Name
 		}
-		tokenChan <- f.Name
 
 		// emit argument tokens
 		if len(f.Arguments) > 0 {
-			tokenChan <- tokenLP
+			if !f.IsFunc {
+				tokenChan <- tokenLP
+			}
 			for i := range f.Arguments {
 				if i != 0 {
 					tokenChan <- tokenComma
@@ -61,6 +74,11 @@ func (f *Field) stringChan() <-chan string {
 					tokenChan <- str
 				}
 			}
+			if !f.IsFunc {
+				tokenChan <- tokenRP
+			}
+		}
+		if f.IsFunc && f.Alias != "" {
 			tokenChan <- tokenRP
 		}
 
@@ -79,6 +97,7 @@ func (f *Field) stringChan() <-chan string {
 			}
 			tokenChan <- tokenRB
 		}
+
 		close(tokenChan)
 	}()
 	return tokenChan
