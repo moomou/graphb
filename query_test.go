@@ -66,9 +66,17 @@ func TestQuery_JSON(t *testing.T) {
 }
 
 func TestDgraphQuery(t *testing.T) {
+	buildString := func(strChan <-chan string) string {
+		var strs []string
+		for str := range strChan {
+			strs = append(strs, str)
+		}
+		return strings.Join(strs, "")
+	}
+
 	t.Parallel()
 
-	t.Run("Arguments can be nested structures", func(t *testing.T) {
+	t.Run("simple", func(t *testing.T) {
 		t.Parallel()
 
 		q := NewQuery(TypeDgraphQuery).
@@ -84,14 +92,52 @@ func TestDgraphQuery(t *testing.T) {
 				),
 			)
 
-		c := q.stringChan()
+		assert.Equal(t, `{all(func:anyofterms(name,"blob")){question}}`, buildString(q.stringChan()))
+	})
 
-		var strs []string
-		for str := range c {
-			strs = append(strs, str)
-		}
+	t.Run("simple2", func(t *testing.T) {
+		t.Parallel()
 
-		assert.Equal(t, `{all(func:anyofterms(name,"blob")){question}}`, strings.Join(strs, ""))
+		q := NewQuery(TypeDgraphQuery).
+			SetName("").
+			SetFields(
+				NewFuncField("bd").SetArguments(
+					ArgumentFuncType(
+						"eq",
+						ArgumentString("name@en", "Blade Runner"),
+					),
+				).SetFields(
+					NewField("uid"),
+					NewField("name@en"),
+					NewField("initial_release_date"),
+					NewField("netflix_id"),
+				),
+			)
+
+		assert.Equal(t, `{bd(func:eq(name@en,"Blade Runner")){uid,name@en,initial_release_date,netflix_id}}`, buildString(q.stringChan()))
+	})
+
+	t.Run("nested", func(t *testing.T) {
+		t.Parallel()
+
+		q := NewQuery(TypeDgraphQuery).
+			SetName("").
+			SetFields(
+				NewFuncField("mf").SetArguments(
+					ArgumentFuncType(
+						"eq",
+						ArgumentString("name", "Michael"),
+					),
+				).SetFields(
+					NewField("name"),
+					NewField("age"),
+					NewField("friend").SetFields(
+						NewField("name@."),
+					),
+				),
+			)
+
+		assert.Equal(t, `{mf(func:eq(name,"Michael")){name,age,friend{name@.}}}`, buildString(q.stringChan()))
 	})
 
 }
