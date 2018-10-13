@@ -11,6 +11,7 @@ type Field struct {
 	Arguments []Argument
 	Fields    []*Field
 	IsFunc    bool
+	Bools     []string
 	E         error
 }
 
@@ -68,7 +69,11 @@ func (f *Field) stringChan() <-chan string {
 			}
 			for i := range f.Arguments {
 				if i != 0 {
-					tokenChan <- tokenComma
+					if len(f.Bools) == 0 {
+						tokenChan <- tokenComma
+					} else {
+						tokenChan <- " " + f.Bools[i-1] + " "
+					}
 				}
 				for str := range f.Arguments[i].stringChan() {
 					tokenChan <- str
@@ -164,6 +169,12 @@ func MakeField(name string) *Field {
 // SetArguments sets the arguments of a Field and return the pointer to this Field.
 func (f *Field) SetArguments(arguments ...Argument) *Field {
 	f.Arguments = arguments
+	return f
+}
+
+func (f *Field) SetArgumentsWithBool(bools []string, arguments ...Argument) *Field {
+	f.Arguments = arguments
+	f.Bools = bools
 	return f
 }
 

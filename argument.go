@@ -27,7 +27,11 @@ func (a *Argument) stringChan() <-chan string {
 			if a.IsFunc && (str == tokenLB || str == tokenRB) {
 				continue
 			} else if a.IsFunc && str == tokenColumn {
-				str = tokenComma
+				if a.Name == "has" {
+					break
+				} else {
+					str = tokenComma
+				}
 			}
 			tokenChan <- str
 		}
@@ -201,16 +205,16 @@ func (s argumentSlice) stringChan() <-chan string {
 	tokenChan := make(chan string)
 
 	go func() {
-		tokenChan <- "{"
+		tokenChan <- tokenLB
 		for i, v := range s {
 			if i != 0 {
-				tokenChan <- ","
+				tokenChan <- tokenComma
 			}
 			for str := range v.stringChan() {
 				tokenChan <- str
 			}
 		}
-		tokenChan <- "}"
+		tokenChan <- tokenRB
 		close(tokenChan)
 	}()
 	return tokenChan

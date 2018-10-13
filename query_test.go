@@ -80,7 +80,6 @@ func TestDgraphQuery(t *testing.T) {
 		t.Parallel()
 
 		q := NewQuery(TypeDgraphQuery).
-			SetName("").
 			SetFields(
 				NewFuncField("all").SetArguments(
 					ArgumentFuncType(
@@ -121,7 +120,6 @@ func TestDgraphQuery(t *testing.T) {
 		t.Parallel()
 
 		q := NewQuery(TypeDgraphQuery).
-			SetName("").
 			SetFields(
 				NewFuncField("mf").SetArguments(
 					ArgumentFuncType(
@@ -138,6 +136,67 @@ func TestDgraphQuery(t *testing.T) {
 			)
 
 		assert.Equal(t, `{mf(func:eq(name,"Michael")){name,age,friend{name@.}}}`, buildString(q.stringChan()))
+	})
+
+	t.Run("filter", func(t *testing.T) {
+		t.Parallel()
+
+		q := NewQuery(TypeDgraphQuery).
+			SetFields(
+				NewFuncField("s").SetArguments(
+					ArgumentFuncType(
+						"eq",
+						ArgumentString("name@en", "RidleyScott"),
+					),
+				).SetFields(
+					NewField("director.film@filter").SetArguments(
+						ArgumentFuncType(
+							"le",
+							ArgumentString("initial_release_date", "2000"),
+						),
+					).SetFields(
+						NewField("initial_release_date"),
+					),
+				),
+			)
+
+		assert.Equal(t, `{s(func:eq(name@en,"RidleyScott")){director.film@filter(le(initial_release_date,"2000")){initial_release_date}}}`, buildString(q.stringChan()))
+	})
+
+	t.Run("boolean", func(t *testing.T) {
+		t.Parallel()
+
+		q := NewQuery(TypeDgraphQuery).
+			SetFields(
+				NewFuncField("me").SetArguments(
+					ArgumentFuncType(
+						"eq",
+						ArgumentString("name@en", "StevenSpielberg"),
+					),
+				).SetFields(
+					NewField("name@en@filter").SetArguments(
+						ArgumentFuncType(
+							"has",
+							ArgumentString("director.film", ""),
+						),
+					),
+					NewField("director.film@filter").SetArgumentsWithBool(
+						[]string{"OR"},
+						ArgumentFuncType(
+							"allofterms",
+							ArgumentString("name@en", "jonesindiana"),
+						),
+						ArgumentFuncType(
+							"allofterms",
+							ArgumentString("name@en", "jurassicpark"),
+						),
+					).SetFields(
+						NewField("uid"),
+					),
+				),
+			)
+
+		assert.Equal(t, `{me(func:eq(name@en,"StevenSpielberg")){name@en@filter(has(director.film)),director.film@filter(allofterms(name@en,"jonesindiana") OR allofterms(name@en,"jurassicpark")){uid}}}`, buildString(q.stringChan()))
 	})
 
 }
