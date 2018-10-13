@@ -10,7 +10,7 @@ var validName = regexp.MustCompile("^[_A-Za-z][_0-9A-Za-z]*$")
 
 func isValidOperationType(Type operationType) bool {
 	low := strings.ToLower(string(Type))
-	return low == "query" || low == "mutation" || low == "subscription"
+	return low == "query" || low == "mutation" || low == "subscription" || low == "dgraph"
 }
 
 const (
