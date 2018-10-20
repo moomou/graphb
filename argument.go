@@ -2,6 +2,7 @@ package graphb
 
 import (
 	"fmt"
+	"regexp"
 )
 
 type argumentValue interface {
@@ -60,6 +61,9 @@ func ArgumentAny(name string, value interface{}) (Argument, error) {
 	case []string:
 		return ArgumentStringSlice(name, v...), nil
 
+	case *regexp.Regexp:
+		return ArgumentRegex(name, v), nil
+
 	default:
 		return Argument{}, ArgumentTypeNotSupportedErr{Value: value}
 	}
@@ -75,6 +79,11 @@ func ArgumentInt(name string, value int) Argument {
 
 func ArgumentString(name string, value string) Argument {
 	return Argument{name, argString(value), false}
+}
+
+func ArgumentRegex(name string, value *regexp.Regexp) Argument {
+	va := argRegexp(value.String())
+	return Argument{name, va, false}
 }
 
 func ArgumentBoolSlice(name string, values ...bool) Argument {
@@ -215,6 +224,18 @@ func (s argumentSlice) stringChan() <-chan string {
 			}
 		}
 		tokenChan <- tokenRB
+		close(tokenChan)
+	}()
+	return tokenChan
+}
+
+type argRegexp string
+
+func (re argRegexp) stringChan() <-chan string {
+	tokenChan := make(chan string)
+
+	go func() {
+		tokenChan <- fmt.Sprintf("%s", re)
 		close(tokenChan)
 	}()
 	return tokenChan
