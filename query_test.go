@@ -138,7 +138,7 @@ func TestDgraphQuery(t *testing.T) {
 		assert.Equal(t, `{mf(func:eq(name,"Michael")){name,age,friend{name@.}}}`, buildString(q.stringChan()))
 	})
 
-	t.Run("filter", func(t *testing.T) {
+	t.Run("field filter", func(t *testing.T) {
 		t.Parallel()
 
 		q := NewQuery(TypeDgraphQuery).
@@ -197,6 +197,37 @@ func TestDgraphQuery(t *testing.T) {
 			)
 
 		assert.Equal(t, `{me(func:eq(name@en,"StevenSpielberg")){name@en@filter(has(director.film)),director.film@filter(allofterms(name@en,"jonesindiana") OR allofterms(name@en,"jurassicpark")){uid}}}`, buildString(q.stringChan()))
+	})
+
+	t.Run("query filter wt boolean", func(t *testing.T) {
+		t.Parallel()
+
+		q := NewQuery(TypeDgraphQuery).
+			SetFields(
+				NewFuncField("query").SetArguments(
+					ArgumentFuncType(
+						"eq",
+						ArgumentString("word@en", "dog"),
+					),
+				).Filter(
+					[]string{"AND"},
+					ArgumentFuncType(
+						"has",
+						ArgumentString("name", ""),
+					),
+					ArgumentFuncType(
+						"eq",
+						ArgumentString("age", "7"),
+					),
+				).SetFields(
+					NewField("name"),
+					NewField("director.film").SetFields(
+						NewField("uid"),
+					),
+				),
+			)
+
+		assert.Equal(t, `{query(func:eq(word@en,"dog"))@filter(has(name) AND eq(age,"7")){name,director.film{uid}}}`, buildString(q.stringChan()))
 	})
 
 }

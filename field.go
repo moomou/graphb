@@ -13,6 +13,8 @@ type Field struct {
 	IsFunc    bool
 	Bools     []string
 	E         error
+
+	filterArguments []Argument
 }
 
 // Implement fieldContainer
@@ -41,7 +43,6 @@ func (f *Field) StringChan() (<-chan string, error) {
 // The different being the public method checks the validity of the Field structure
 // while the private counterpart assumes the validity.
 func (f *Field) stringChan() <-chan string {
-
 	tokenChan := make(chan string)
 
 	go func() {
@@ -85,6 +86,23 @@ func (f *Field) stringChan() <-chan string {
 		}
 		if f.IsFunc && f.Alias != "" {
 			tokenChan <- tokenRP
+
+			if len(f.filterArguments) > 0 {
+				tokenChan <- "@filter("
+				for i := range f.filterArguments {
+					if i != 0 {
+						if len(f.Bools) == 0 {
+							tokenChan <- tokenComma
+						} else {
+							tokenChan <- " " + f.Bools[i-1] + " "
+						}
+					}
+					for str := range f.filterArguments[i].stringChan() {
+						tokenChan <- str
+					}
+				}
+				tokenChan <- tokenRP
+			}
 		}
 
 		// emit field tokens
@@ -105,6 +123,7 @@ func (f *Field) stringChan() <-chan string {
 
 		close(tokenChan)
 	}()
+
 	return tokenChan
 }
 
@@ -192,6 +211,12 @@ func (f *Field) SetFields(fs ...*Field) *Field {
 // SetAlias sets the alias of a Field and return the pointer to this Field.
 func (f *Field) SetAlias(alias string) *Field {
 	f.Alias = alias
+	return f
+}
+
+func (f *Field) Filter(bools []string, argument ...Argument) *Field {
+	f.Bools = bools
+	f.filterArguments = argument
 	return f
 }
 
